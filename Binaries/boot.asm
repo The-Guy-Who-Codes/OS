@@ -114,8 +114,7 @@ call disp_string
     mov cl, [SectorsPerFat]
     call read_disk_sector
 
-    mov si, test1
-    call disp_string
+    
 
 .load_kernel
 
