@@ -3,7 +3,7 @@
 cd ../Binaries
 nasm -f bin boot.asm -o boot.bin
 gcc kernel.c -o kernel.bin
-mv kernel.exe ../Build/kernel.bin
+mv kernel.bin ../Build/kernel.bin
 mv boot.bin ../Build/boot.bin
 cd ../Build
 dd if=/dev/zero of=floppy.img bs=512 count=2880

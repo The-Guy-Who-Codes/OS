@@ -64,13 +64,15 @@ call disp_string
     inc ax
 
   .next:
-    mov al, cl
+    push ax ; used for reading of kernel file
+    ;mov al, cl
 
   ; calculate the LBA of the root directory start
 
     mov ax, [SectorsPerFat]
     mul byte [FatCount]
     add ax, [ReservedSectors]
+    push ax ; so it can be used when loading the kernel
 
   ; where the read sectors are to be stored
 
@@ -88,6 +90,7 @@ call disp_string
     
     mov si, kernel_name
     mov di, buffer
+    xor bx, bx
 
 .search_kernel:
 
@@ -104,19 +107,45 @@ call disp_string
 
 
 .found_kernel:    
+    mov ax, bx
+    mul word [DirectoryEntryCount]
+    add ax, di
+    add ax, 26
+    push ax
 
     mov si, pass
     call disp_string
 
-    ; mov ax, [di + 26] ; lower cluster value of the kernel
-
     mov ax, [ReservedSectors]
+    mov bx, buffer
+    
     mov cl, [SectorsPerFat]
     call read_disk_sector
 
-    
+    call disp_string
 
-.load_kernel
+.load_kernel:
+    ; calculate the lba of the end of the root directory in bx
+    pop bx
+    pop cx
+    add bx, cx
+
+
+    pop cx
+    mov ax, cx ; lower cluster value of the kernel
+    sub ax, 2
+    mul byte [SectorsPerCluster]
+    add ax, bx
+   
+    mov cl, [SectorsPerCluster]
+    mov bx, di
+    add bx, [SectorsPerFat]
+
+    call read_disk_sector
+
+    mov si, pass
+    call disp_string
+
 
 
 

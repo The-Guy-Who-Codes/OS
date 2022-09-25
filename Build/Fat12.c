@@ -116,7 +116,6 @@ bool readFile(FILE* disk, DirectoryEntry* fileEntry, uint8_t* buffer) {
     printf("%i\n", currentCluster);
     uint32_t lba;
     uint32_t Fat_index;
-    uint8_t count = 1;
 
     do {
         lba = g_RootDirectoryEnd + (currentCluster - 2) * g_BootSector.SectorsPerCluster;   // calculate the lba of the cluster pointed to in the root directory table
@@ -130,9 +129,7 @@ bool readFile(FILE* disk, DirectoryEntry* fileEntry, uint8_t* buffer) {
         } else {
             currentCluster = (*(uint16_t*)(g_Fat + Fat_index)) >> 4;
         }
-        count++;
-    } while (ok && currentCluster < 0xFF8);
-    printf("%i\n", count);
+    } while (ok && currentCluster < 0xFF8);;
     return ok;
 }
 
