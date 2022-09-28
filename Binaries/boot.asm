@@ -126,20 +126,25 @@ call disp_string
 
 .load_kernel:
     ; calculate the lba of the end of the root directory in bx
-    pop bx
-    pop cx
-    add bx, cx
+
+    pop ax ; lower cluster value of the kernel
+
+    pop bx ; lba of the root directory
+    pop cx ; size of the root directory
 
 
-    pop cx
-    mov ax, cx ; lower cluster value of the kernel
     sub ax, 2
     mul byte [SectorsPerCluster]
     add ax, bx
+    add ax, cx
+    push ax
    
     mov cl, [SectorsPerCluster]
-    mov bx, di
-    add bx, [SectorsPerFat]
+    
+
+    mov bx, [SectorsPerFat]
+    mul byte [SectorsPerCluster]
+    add bx, di
 
     call read_disk_sector
 
