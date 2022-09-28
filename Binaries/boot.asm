@@ -133,7 +133,7 @@ call disp_string
     pop cx ; size of the root directory
 
 
-    sub ax, 2
+    sub ax, 2 ; refer to lba calculation in readfile function in Fat12.c
     mul byte [SectorsPerCluster]
     add ax, bx
     add ax, cx
@@ -143,8 +143,8 @@ call disp_string
     
 
     mov bx, [SectorsPerFat]
-    mul byte [SectorsPerCluster]
-    add bx, di
+    mul byte [SectorsPerCluster] ; create an offset for the buffer woth size of fat table
+    add bx, di ; add location of buffer to the fat table size offset
 
     call read_disk_sector
 
