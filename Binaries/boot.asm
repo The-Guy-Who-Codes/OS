@@ -132,12 +132,12 @@ call disp_string
     pop bx ; lba of the root directory
     pop cx ; size of the root directory
     mov [buffer], bl ; this word of the FAT table isnt used so can be used for storing a variable
-    mov [buffer + 1], al
 
     mov bx, [SectorsPerFat]
     mul byte [SectorsPerCluster] ; create an offset for the buffer woth size of fat table
     add bx, di ; add location of buffer to the fat table size offset
 
+; check mismatch between location the fat table and the fact it overwrites the root directory and modify asm program appropriately
 
 .lp:
 
@@ -145,7 +145,8 @@ call disp_string
     mul byte [SectorsPerCluster]
     add al, byte [buffer]
     add ax, cx ; ax = lba of cluster to be read
-   
+    mov [buffer + 1], al
+  
     mov cl, [SectorsPerCluster]
     
     call read_disk_sector
@@ -158,7 +159,7 @@ call disp_string
     mul word [BytesPerSector]
     add bx, ax
     
-    mov al, [buffer + 1]
+    mov al, byte [buffer + 1]
     mov si, 0x03
     mul si
     mov si, 0x02
@@ -169,7 +170,7 @@ call disp_string
 
     mov si, 0x02
     div si
-    cmp dx, byte 0x00
+    cmp ax, byte 0x00
     jnz .odd
 
 .even:
