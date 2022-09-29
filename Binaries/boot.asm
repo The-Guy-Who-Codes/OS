@@ -131,27 +131,70 @@ call disp_string
 
     pop bx ; lba of the root directory
     pop cx ; size of the root directory
-
-
-    sub ax, 2 ; refer to lba calculation in readfile function in Fat12.c
-    mul byte [SectorsPerCluster]
-    add ax, bx
-    add ax, cx
-    push ax
-   
-    mov cl, [SectorsPerCluster]
-    
+    mov [buffer], bl ; this word of the FAT table isnt used so can be used for storing a variable
+    mov [buffer + 1], al
 
     mov bx, [SectorsPerFat]
     mul byte [SectorsPerCluster] ; create an offset for the buffer woth size of fat table
     add bx, di ; add location of buffer to the fat table size offset
 
+
+.lp:
+
+    sub ax, 2 ; refer to lba calculation in readfile function in Fat12.c
+    mul byte [SectorsPerCluster]
+    add al, byte [buffer]
+    add ax, cx ; ax = lba of cluster to be read
+   
+    mov cl, [SectorsPerCluster]
+    
     call read_disk_sector
 
     mov si, pass
     call disp_string
 
+    push ax ; add the size of a cluster to the buffer offset
+    mov ax, [SectorsPerCluster]
+    mul word [BytesPerSector]
+    add bx, ax
+    
+    mov al, [buffer + 1]
+    mov si, 0x03
+    mul si
+    mov si, 0x02
+    div si
+    mov di, ax
+    
+    pop ax
 
+    mov si, 0x02
+    div si
+    cmp dx, byte 0x00
+    jnz .odd
+
+.even:
+    
+    mov ax, buffer
+    add ax, di
+    and ax, word 0x0fff
+    jmp .fini
+
+.odd:
+    mov ax, buffer
+    add ax, di
+    shr ax, 0x04
+    
+
+.fini:
+
+    cmp ax, word 0x0ff8
+    jl .loaded
+    jmp .lp
+
+.loaded:
+
+    mov si, test5
+    call disp_string
 
 
 jmp $
@@ -295,7 +338,7 @@ disk_reset:
     Disk_read_Failed: db "Read from disk failed", 0x0d, 0x0a, 0x00   ; 0x0d, 0x0a is the new line command
     hello: db "Loading Kernel", 0x0d, 0x0a, 0x00
     pass: db "Passed", 0x0d, 0x0a, 0x00
-    kernel_name db "KERNEL  BIN"
+    kernel_name db "TEXT    TXT"
     test1 db "T1", 0x0d, 0x0a, 0x00
     test2 db "T2", 0x0d, 0x0a, 0x00
     test3 db "T3", 0x0d, 0x0a, 0x00
