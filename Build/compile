@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+clear
 cd ../Binaries
 nasm -f bin boot.asm -o boot.bin
 gcc kernel.c -o kernel.bin
@@ -8,7 +10,7 @@ mv boot.bin ../Build/boot.bin
 cd ../Build
 dd if=/dev/zero of=floppy.img bs=512 count=2880
 /sbin/mkfs.fat -F 12 -n "MyOS" floppy.img
-mcopy -i floppy.img text.txt ::/
+mcopy -i floppy.img test.bin ::/
 mcopy -i floppy.img kernel.bin ::/
 dd if=boot.bin of=floppy.img conv=notrunc
 

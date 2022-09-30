@@ -1,3 +1,10 @@
+[bits 16]
+
+mov si, Success
+call disp_string
+
+
+
 disp_string:
     ; displays string
     ; Parameters:
@@ -18,10 +25,11 @@ disp_string:
     int 0x10
     jmp .lp
 
-
-
-  .done:
+.done:
     pop cx
     pop bx
     pop si
     ret
+
+Success: db "This Worked", 0x0d, 0x0a, 0x00
+

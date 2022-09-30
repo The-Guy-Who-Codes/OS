@@ -64,15 +64,14 @@ call disp_string
     inc ax
 
   .next:
-    push ax ; used for reading of kernel file
-    ;mov al, cl
+    push ax ; size of the root directory, used for reading of kernel file
 
   ; calculate the LBA of the root directory start
 
     mov ax, [SectorsPerFat]
     mul byte [FatCount]
     add ax, [ReservedSectors]
-    push ax ; so it can be used when loading the kernel
+    push ax ; root directory start, so it can be used when loading the kernel
 
   ; where the read sectors are to be stored
 
@@ -82,12 +81,8 @@ call disp_string
 
     mov dl, [DriveNumber]
 
-
     call read_disk_sector
 
-    
-    
-    
     mov si, kernel_name
     mov di, buffer
     xor bx, bx
@@ -111,13 +106,13 @@ call disp_string
     mul word [DirectoryEntryCount]
     add ax, di
     add ax, 26
-    push ax
+    push ax ; first cluster low, used in reading of the kernel
 
     mov si, pass
     call disp_string
 
-    mov ax, [ReservedSectors]
-    mov bx, buffer
+    mov ax, [ReservedSectors] ; location of the FAT table on the floppy disk
+    mov bx, buffer ; will overwrite the root directory table
     
     mov cl, [SectorsPerFat]
     call read_disk_sector
@@ -131,24 +126,29 @@ call disp_string
 
     pop bx ; lba of the root directory
     pop cx ; size of the root directory
-    mov [buffer], bl ; this word of the FAT table isnt used so can be used for storing a variable
+    add bx, cx ; lba of root directory end
+    mov [buffer], bx ; this word of the FAT table isnt used so can be used for storing a variable
+    push ax
 
-    mov bx, [SectorsPerFat]
-    mul byte [SectorsPerCluster] ; create an offset for the buffer woth size of fat table
-    add bx, di ; add location of buffer to the fat table size offset
 
-; check mismatch between location the fat table and the fact it overwrites the root directory and modify asm program appropriately
+    mov ax, [SectorsPerFat]
+    mul word [BytesPerSector] ; create an offset for the buffer with size of a FAT table
+    mov bx, ax
+    add bx, buffer ; add location of buffer to the fat table sized offset
+
+    ;pop ax
+    mov ax, 0x02
+    mov cl, [SectorsPerCluster]
 
 .lp:
 
     sub ax, 2 ; refer to lba calculation in readfile function in Fat12.c
     mul byte [SectorsPerCluster]
-    add al, byte [buffer]
-    add ax, cx ; ax = lba of cluster to be read
-    mov [buffer + 1], al
-  
-    mov cl, [SectorsPerCluster]
-    
+    add ax, word [buffer] ; ax = lba of cluster to be read
+    ;mov [buffer + 1], al
+ 
+    mov dl, [DriveNumber]
+ 
     call read_disk_sector
 
     mov si, pass
@@ -159,7 +159,9 @@ call disp_string
     mul word [BytesPerSector]
     add bx, ax
     
-    mov al, byte [buffer + 1]
+    ;mov al, byte [buffer + 1] ; calculate the FAT index
+    pop ax
+    push ax
     mov si, 0x03
     mul si
     mov si, 0x02
@@ -168,9 +170,9 @@ call disp_string
     
     pop ax
 
-    mov si, 0x02
+    mov si, 0x02 ; see if the current cluster is even or odd
     div si
-    cmp ax, byte 0x00
+    cmp ah, byte 0x00 ; 16 bot DIV with byte divisor stores remainder in AH register
     jnz .odd
 
 .even:
@@ -196,6 +198,12 @@ call disp_string
 
     mov si, test5
     call disp_string
+
+    mov ax, [SectorsPerFat]
+    mul word [BytesPerSector]
+    add ax, buffer
+    inc ax
+    jmp ax
 
 
 jmp $
@@ -339,11 +347,7 @@ disk_reset:
     Disk_read_Failed: db "Read from disk failed", 0x0d, 0x0a, 0x00   ; 0x0d, 0x0a is the new line command
     hello: db "Loading Kernel", 0x0d, 0x0a, 0x00
     pass: db "Passed", 0x0d, 0x0a, 0x00
-    kernel_name db "TEXT    TXT"
-    test1 db "T1", 0x0d, 0x0a, 0x00
-    test2 db "T2", 0x0d, 0x0a, 0x00
-    test3 db "T3", 0x0d, 0x0a, 0x00
-    test4 db "T4", 0x0d, 0x0a, 0x00
+    kernel_name db "TEST    BIN"
     test5 db "T5", 0x0d, 0x0a, 0x00
 
 
