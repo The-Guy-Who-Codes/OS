@@ -102,22 +102,28 @@ call disp_string
 
 
 .found_kernel:    
-    mov ax, bx
-    mul word [DirectoryEntryCount]
-    add ax, di
-    add ax, 26
-    push ax ; first cluster low, used in reading of the kernel
 
     mov si, pass
     call disp_string
 
-    mov ax, [ReservedSectors] ; location of the FAT table on the floppy disk
-    mov bx, buffer ; will overwrite the root directory table
     
+    mov ax, bx
+    mul word [DirectoryEntryCount]
+    add ax, di
+    add ax, 26
+   
+    pop cx
+    pop bx
+    push cx
+    push bx ; bx is the size of the root directory table
+    add bx, buffer
+    
+    push ax ; first cluster low, used in reading of the kernel
+    mov ax, [ReservedSectors] ; location of the FAT table on the floppy disk
     mov cl, [SectorsPerFat]
+    
     call read_disk_sector
 
-    call disp_string
 
 .load_kernel:
     ; calculate the lba of the end of the root directory in bx
@@ -127,13 +133,15 @@ call disp_string
     pop bx ; lba of the root directory
     pop cx ; size of the root directory
     add bx, cx ; lba of root directory end
-    mov [buffer], bx ; this word of the FAT table isnt used so can be used for storing a variable
+    mov [buffer], bx ; this word of the root directory table is just used for the name of the OS so can be overwritten
+    mov [buffer + 2], cx
     push ax
 
 
     mov ax, [SectorsPerFat]
     mul word [BytesPerSector] ; create an offset for the buffer with size of a FAT table
     mov bx, ax
+    add bx, cx ; size of the root directory table
     add bx, buffer ; add location of buffer to the fat table sized offset
 
     ;pop ax
@@ -202,8 +210,9 @@ call disp_string
     mov ax, [SectorsPerFat]
     mul word [BytesPerSector]
     add ax, buffer
-    inc ax
-    jmp ax
+    add ax, [buffer + 2]
+    mov si, ax
+    call disp_string
 
 
 jmp $
