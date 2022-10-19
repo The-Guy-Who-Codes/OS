@@ -132,6 +132,7 @@ call disp_string
 
     pop bx ; lba of the root directory
     pop cx ; size of the root directory
+    mul word [BytesPerSector]
     add bx, cx ; lba of root directory end
     mov [buffer], bx ; this word of the root directory table is just used for the name of the OS so can be overwritten
     mov [buffer + 2], cx
@@ -180,7 +181,7 @@ call disp_string
 
     mov si, 0x02 ; see if the current cluster is even or odd
     div si
-    cmp ah, byte 0x00 ; 16 bot DIV with byte divisor stores remainder in AH register
+    cmp ah, byte 0x00 ; 16 bit DIV with byte divisor stores remainder in AH register
     jnz .odd
 
 .even:
@@ -204,15 +205,12 @@ call disp_string
 
 .loaded:
 
-    mov si, test5
-    call disp_string
-
     mov ax, [SectorsPerFat]
     mul word [BytesPerSector]
-    add ax, buffer
-    add ax, [buffer + 2]
-    mov si, ax
-    call disp_string
+    mov bx, ax
+    add bx, buffer
+    add bx, 0x23
+    jmp 0x93db
 
 
 jmp $
@@ -357,7 +355,6 @@ disk_reset:
     hello: db "Loading Kernel", 0x0d, 0x0a, 0x00
     pass: db "Passed", 0x0d, 0x0a, 0x00
     kernel_name db "TEST    BIN"
-    test5 db "T5", 0x0d, 0x0a, 0x00
 
 
 times 510 - ($ - $$) db 0

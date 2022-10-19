@@ -1,11 +1,12 @@
 [bits 16]
-
+mov ax, 0x00
+mov ds, ax
 mov si, Success
-call disp_string
+call disp_stringg
 
+jmp $
 
-
-disp_string:
+disp_stringg:
     ; displays string
     ; Parameters:
     ;   ds:si start of string
